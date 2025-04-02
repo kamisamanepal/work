@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Item List App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Item List</h1>
+            <button id="darkModeButton">🌙 Dark Mode</button>
+        </header>
+
+        <section class="input-section">
+            <input type="text" id="itemName" placeholder="Item Name" required />
+            <input type="number" id="itemPrice" placeholder="Price (₹)" required />
+            <button id="addItemButton">Add Item</button>
+        </section>
+
+        <section class="sorting-search-section">
+            <input type="text" id="searchInput" placeholder="Search Item" />
+            <select id="sortOption">
+                <option value="name">Sort by Name</option>
+                <option value="price-asc">Sort by Price (Low to High)</option>
+                <option value="price-desc">Sort by Price (High to Low)</option>
+            </select>
+        </section>
+
+        <section class="item-list">
+            <ul id="itemList"></ul>
+        </section>
+
+        <section class="total-info">
+            <p>Total Items: <span id="itemCount">0</span></p>
+            <p>Total Price: ₹<span id="totalPrice">0</span></p>
+        </section>
+
+        <div class="confirm-box" id="confirmBox">
+            <p>Are you sure you want to delete this item?</p>
+            <button id="confirmDeleteButton">Yes</button>
+            <button id="cancelDeleteButton">No</button>
+        </div>
+
+        <div class="confirm-box" id="clearAllBox">
+            <p>Are you sure you want to clear all items?</p>
+            <button id="confirmClearAllButton">Yes</button>
+            <button id="cancelClearAllButton">No</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
