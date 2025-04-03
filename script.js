@@ -15,7 +15,7 @@ const clearAllBox = document.getElementById("clearAllBox");
 const confirmClearAllButton = document.getElementById("confirmClearAllButton");
 const cancelClearAllButton = document.getElementById("cancelClearAllButton");
 
-// Array to hold items
+// Load items from localStorage
 let items = JSON.parse(localStorage.getItem('items')) || [];
 
 // Add Item Function
@@ -70,42 +70,38 @@ function displayItems() {
     totalPrice.textContent = filteredItems.reduce((total, item) => total + item.price, 0).toFixed(2);
 }
 
-// Delete Item Function (Updated for Confirmation)
+// Delete Item Function
 let itemToDeleteIndex = null;
 
 function deleteItem(index) {
     itemToDeleteIndex = index;
-    confirmBox.style.display = "block"; // Show the confirmation box
+    confirmBox.style.display = "block";
 }
 
-// Confirm Delete Function
 function confirmDelete() {
     if (itemToDeleteIndex !== null) {
-        items.splice(itemToDeleteIndex, 1); // Remove item from array
-        localStorage.setItem('items', JSON.stringify(items)); // Update local storage
-        displayItems(); // Re-display items
-        confirmBox.style.display = "none"; // Hide the confirmation box
+        items.splice(itemToDeleteIndex, 1);
+        localStorage.setItem('items', JSON.stringify(items));
+        displayItems();
+        confirmBox.style.display = "none";
     }
 }
 
-// Cancel Delete Function
 function cancelDelete() {
-    confirmBox.style.display = "none"; // Hide the confirmation box without deleting
+    confirmBox.style.display = "none";
 }
-
-// Event Listeners for confirmation buttons
-confirmDeleteButton.addEventListener("click", confirmDelete);
-cancelDeleteButton.addEventListener("click", cancelDelete);
 
 // Toggle Dark Mode
 darkModeButton.addEventListener("click", () => {
     document.body.classList.toggle("dark-mode");
 });
 
-// Event Listeners for other actions
+// Event Listeners
 addItemButton.addEventListener("click", addItem);
 searchInput.addEventListener("input", displayItems);
 sortOption.addEventListener("change", displayItems);
+confirmDeleteButton.addEventListener("click", confirmDelete);
+cancelDeleteButton.addEventListener("click", cancelDelete);
 
-// Initial Display
+// Initial Display on Page Load
 displayItems();
