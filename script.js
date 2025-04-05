@@ -1,107 +1,141 @@
-// Variables
-const itemList = document.getElementById("itemList");
-const addItemButton = document.getElementById("addItemButton");
+// Element references
 const itemNameInput = document.getElementById("itemName");
 const itemPriceInput = document.getElementById("itemPrice");
-const searchInput = document.getElementById("searchInput");
-const sortOption = document.getElementById("sortOption");
+const addItemButton = document.getElementById("addItemButton");
+const itemList = document.getElementById("itemList");
 const itemCount = document.getElementById("itemCount");
 const totalPrice = document.getElementById("totalPrice");
+const searchInput = document.getElementById("searchInput");
+const sortOption = document.getElementById("sortOption");
 const darkModeButton = document.getElementById("darkModeButton");
-const confirmBox = document.getElementById("confirmBox");
-const confirmDeleteButton = document.getElementById("confirmDeleteButton");
-const cancelDeleteButton = document.getElementById("cancelDeleteButton");
-const clearAllBox = document.getElementById("clearAllBox");
-const confirmClearAllButton = document.getElementById("confirmClearAllButton");
-const cancelClearAllButton = document.getElementById("cancelClearAllButton");
 
-// Load items from localStorage
-let items = JSON.parse(localStorage.getItem('items')) || [];
+let items = [];
+let deletedItems = [];
+let editIndex = null;
 
-// Add Item Function
-function addItem() {
-    const name = itemNameInput.value.trim();
-    const price = parseFloat(itemPriceInput.value.trim());
+function updateDisplay() {
+  itemList.innerHTML = "";
+  let filtered = [...items];
 
-    if (!name || isNaN(price) || price <= 0) {
-        alert("Please enter a valid item name and price.");
-        return;
-    }
+  const search = searchInput.value.toLowerCase();
+  if (search) {
+    filtered = filtered.filter(item => item.name.toLowerCase().includes(search));
+  }
 
-    const newItem = { name, price };
-    items.push(newItem);
-    localStorage.setItem('items', JSON.stringify(items));
-    displayItems();
+  if (sortOption.value === "name") {
+    filtered.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sortOption.value === "price-asc") {
+    filtered.sort((a, b) => a.price - b.price);
+  } else if (sortOption.value === "price-desc") {
+    filtered.sort((a, b) => b.price - a.price);
+  }
+
+  filtered.forEach((item, index) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <div class="item-info">
+        <span class="item-name">${item.name}</span>
+        <span class="item-price">₹${item.price}</span>
+      </div>
+      <div class="item-buttons">
+        <button onclick="editItem(${index})">Edit</button>
+        <button onclick="confirmDelete(${index})">Delete</button>
+      </div>`;
+    itemList.appendChild(li);
+  });
+
+  itemCount.textContent = items.length;
+  totalPrice.textContent = items.reduce((sum, item) => sum + item.price, 0);
+}
+
+addItemButton.addEventListener("click", () => {
+  const name = itemNameInput.value.trim();
+  const price = parseFloat(itemPriceInput.value);
+  if (name && !isNaN(price)) {
+    items.push({ name, price });
     itemNameInput.value = "";
     itemPriceInput.value = "";
-}
-
-// Display Items Function
-function displayItems() {
-    itemList.innerHTML = "";
-
-    const searchQuery = searchInput.value.toLowerCase();
-    const filteredItems = items.filter(item => item.name.toLowerCase().includes(searchQuery));
-
-    const sortMethod = sortOption.value;
-    if (sortMethod === "price-asc") {
-        filteredItems.sort((a, b) => a.price - b.price);
-    } else if (sortMethod === "price-desc") {
-        filteredItems.sort((a, b) => b.price - a.price);
-    } else {
-        filteredItems.sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    filteredItems.forEach((item, index) => {
-        const li = document.createElement('li');
-        li.innerHTML = `
-            <div class="item-info">
-                <span class="item-name">${item.name}</span>
-                <span class="item-price">₹${item.price}</span>
-            </div>
-            <div class="item-buttons">
-                <button onclick="deleteItem(${index})">Delete</button>
-            </div>
-        `;
-        itemList.appendChild(li);
-    });
-
-    itemCount.textContent = filteredItems.length;
-    totalPrice.textContent = filteredItems.reduce((total, item) => total + item.price, 0).toFixed(2);
-}
-
-// Delete Item Function
-let itemToDeleteIndex = null;
-
-function deleteItem(index) {
-    itemToDeleteIndex = index;
-    confirmBox.style.display = "block";
-}
-
-function confirmDelete() {
-    if (itemToDeleteIndex !== null) {
-        items.splice(itemToDeleteIndex, 1);
-        localStorage.setItem('items', JSON.stringify(items));
-        displayItems();
-        confirmBox.style.display = "none";
-    }
-}
-
-function cancelDelete() {
-    confirmBox.style.display = "none";
-}
-
-// Toggle Dark Mode
-darkModeButton.addEventListener("click", () => {
-    document.body.classList.toggle("dark-mode");
+    updateDisplay();
+  }
 });
 
-// Event Listeners
-addItemButton.addEventListener("click", addItem);
-searchInput.addEventListener("input", displayItems);
-sortOption.addEventListener("change", displayItems);
-confirmDeleteButton.addEventListener("click", confirmDelete);
-cancelDeleteButton.addEventListener("click", cancelDelete);
+searchInput.addEventListener("input", updateDisplay);
+sortOption.addEventListener("change", updateDisplay);
+darkModeButton.addEventListener("click", () => {
+  document.body.classList.toggle("dark-mode");
+});
 
-// Initial Display on Page Load
-displayItems();
+// Edit functionality
+const editBox = document.getElementById("editBox");
+const editName = document.getElementById("editItemName");
+const editPrice = document.getElementById("editItemPrice");
+const adjustInput = document.getElementById("priceAdjustmentInput");
+
+document.getElementById("addPrice").onclick = () => {
+  const value = parseFloat(adjustInput.value);
+  if (!isNaN(value)) editPrice.value = parseFloat(editPrice.value) + value;
+};
+document.getElementById("subtractPrice").onclick = () => {
+  const value = parseFloat(adjustInput.value);
+  if (!isNaN(value)) editPrice.value = parseFloat(editPrice.value) - value;
+};
+document.getElementById("saveItemButton").onclick = () => {
+  items[editIndex] = {
+    name: editName.value.trim(),
+    price: parseFloat(editPrice.value)
+  };
+  editBox.style.display = "none";
+  updateDisplay();
+};
+document.getElementById("cancelEditButton").onclick = () => {
+  editBox.style.display = "none";
+};
+
+function editItem(index) {
+  editIndex = index;
+  editName.value = items[index].name;
+  editPrice.value = items[index].price;
+  adjustInput.value = "";
+  editBox.style.display = "block";
+}
+
+// Delete confirmation
+const confirmBox = document.getElementById("confirmBox");
+let deleteIndex = null;
+
+function confirmDelete(index) {
+  deleteIndex = index;
+  confirmBox.style.display = "block";
+}
+document.getElementById("confirmDeleteButton").onclick = () => {
+  deletedItems.unshift(items[deleteIndex]);
+  items.splice(deleteIndex, 1);
+  confirmBox.style.display = "none";
+  updateDisplay();
+  updateDeletedList();
+};
+document.getElementById("cancelDeleteButton").onclick = () => {
+  confirmBox.style.display = "none";
+};
+
+// Recently Deleted Modal
+const showDeletedBtn = document.getElementById("showDeletedBtn");
+const deletedModal = document.getElementById("deletedModal");
+const closeDeletedBtn = document.getElementById("closeDeletedBtn");
+
+showDeletedBtn.addEventListener("click", () => {
+  deletedModal.style.display = "block";
+});
+closeDeletedBtn.addEventListener("click", () => {
+  deletedModal.style.display = "none";
+});
+
+function updateDeletedList() {
+  const list = document.getElementById("deletedList");
+  list.innerHTML = "";
+  deletedItems.forEach(item => {
+    const li = document.createElement("li");
+    li.textContent = `${item.name} - ₹${item.price}`;
+    list.appendChild(li);
+  });
+}
