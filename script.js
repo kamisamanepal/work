@@ -9,19 +9,23 @@ const searchInput = document.getElementById("searchInput");
 const sortOption = document.getElementById("sortOption");
 const darkModeButton = document.getElementById("darkModeButton");
 
-let items = [];
-let deletedItems = [];
+let items = JSON.parse(localStorage.getItem('items')) || [];  // Load items from localStorage or initialize as empty array
+let deletedItems = JSON.parse(localStorage.getItem('deletedItems')) || [];  // Load deleted items from localStorage or empty array
 let editIndex = null;
 
+// Update Display
 function updateDisplay() {
-  itemList.innerHTML = "";
-  let filtered = [...items];
+  itemList.innerHTML = "";  // Clear current items
 
-  const search = searchInput.value.toLowerCase();
-  if (search) {
-    filtered = filtered.filter(item => item.name.toLowerCase().includes(search));
+  let filtered = [...items]; // Make a copy of items
+
+  // Search filtering
+  const searchQuery = searchInput.value.toLowerCase(); // Get the search query and convert it to lowercase
+  if (searchQuery) {
+    filtered = filtered.filter(item => item.name.toLowerCase().includes(searchQuery));  // Filter based on item name
   }
 
+  // Sorting based on the selected option
   if (sortOption.value === "name") {
     filtered.sort((a, b) => a.name.localeCompare(b.name));
   } else if (sortOption.value === "price-asc") {
@@ -30,6 +34,7 @@ function updateDisplay() {
     filtered.sort((a, b) => b.price - a.price);
   }
 
+  // Render the filtered and sorted items
   filtered.forEach((item, index) => {
     const li = document.createElement("li");
     li.innerHTML = `
@@ -44,8 +49,13 @@ function updateDisplay() {
     itemList.appendChild(li);
   });
 
+  // Update item count and total price
   itemCount.textContent = items.length;
   totalPrice.textContent = items.reduce((sum, item) => sum + item.price, 0);
+
+  // Save items and deleted items to localStorage
+  localStorage.setItem('items', JSON.stringify(items));
+  localStorage.setItem('deletedItems', JSON.stringify(deletedItems));  // Save deleted items
 }
 
 addItemButton.addEventListener("click", () => {
@@ -55,12 +65,15 @@ addItemButton.addEventListener("click", () => {
     items.push({ name, price });
     itemNameInput.value = "";
     itemPriceInput.value = "";
-    updateDisplay();
+    updateDisplay();  // Update display after adding item
   }
 });
 
+// Search and sort event listeners
 searchInput.addEventListener("input", updateDisplay);
 sortOption.addEventListener("change", updateDisplay);
+
+// Dark mode toggle
 darkModeButton.addEventListener("click", () => {
   document.body.classList.toggle("dark-mode");
 });
@@ -85,7 +98,7 @@ document.getElementById("saveItemButton").onclick = () => {
     price: parseFloat(editPrice.value)
   };
   editBox.style.display = "none";
-  updateDisplay();
+  updateDisplay();  // Update display after saving the item
 };
 document.getElementById("cancelEditButton").onclick = () => {
   editBox.style.display = "none";
@@ -107,13 +120,18 @@ function confirmDelete(index) {
   deleteIndex = index;
   confirmBox.style.display = "block";
 }
+
 document.getElementById("confirmDeleteButton").onclick = () => {
-  deletedItems.unshift(items[deleteIndex]);
-  items.splice(deleteIndex, 1);
+  deletedItems.unshift(items[deleteIndex]); // Add to start of the deleted items list
+  if (deletedItems.length > 5) {
+    deletedItems.pop(); // Keep only the last 5 deleted items
+  }
+  items.splice(deleteIndex, 1);  // Remove item from the main list
   confirmBox.style.display = "none";
-  updateDisplay();
+  updateDisplay();  // Update display after deleting the item
   updateDeletedList();
 };
+
 document.getElementById("cancelDeleteButton").onclick = () => {
   confirmBox.style.display = "none";
 };
@@ -123,19 +141,51 @@ const showDeletedBtn = document.getElementById("showDeletedBtn");
 const deletedModal = document.getElementById("deletedModal");
 const closeDeletedBtn = document.getElementById("closeDeletedBtn");
 
+// Show the Recently Deleted modal
 showDeletedBtn.addEventListener("click", () => {
+  deletedModal.classList.add("show");
   deletedModal.style.display = "block";
-});
-closeDeletedBtn.addEventListener("click", () => {
-  deletedModal.style.display = "none";
+  document.getElementById("deletedModalOverlay").classList.add("show");
 });
 
-function updateDeletedList() {
+// Close the Recently Deleted modal
+closeDeletedBtn.addEventListener("click", () => {
+  deletedModal.classList.remove("show");
+  setTimeout(() => deletedModal.style.display = "none", 300);
+  document.getElementById("deletedModalOverlay").classList.remove("show");
+});
+
+// Update the Recently Deleted List with a View More Button
+function updateDeletedList(limit = 3) {
   const list = document.getElementById("deletedList");
-  list.innerHTML = "";
-  deletedItems.forEach(item => {
+  list.innerHTML = "";  // Clear previous list
+
+  const itemsToShow = deletedItems.slice(0, limit);
+  itemsToShow.forEach((item, index) => {
     const li = document.createElement("li");
-    li.textContent = `${item.name} - ₹${item.price}`;
+    li.innerHTML = `
+      <span>${item.name} - ₹${item.price}</span>
+      <button onclick="restoreItem(${index})">Restore</button>
+    `;
     list.appendChild(li);
   });
+
+  if (deletedItems.length > limit) {
+    const viewMore = document.createElement("button");
+    viewMore.textContent = "View More";
+    viewMore.onclick = () => updateDeletedList(deletedItems.length);
+    list.appendChild(viewMore);
+  }
 }
+
+// Restore functionality
+function restoreItem(index) {
+  items.push(deletedItems[index]);
+  deletedItems.splice(index, 1); // Remove the item from the deleted list
+  updateDisplay();  // Update display after restoring the item
+  updateDeletedList();
+}
+
+// Initialize display when page loads
+updateDisplay();
+ 
